@@ -3,6 +3,7 @@ import { useForm, Controller } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useState } from "react";
+import axios from "axios";
 
 const RegistrationForm = () => {
   const {
@@ -15,8 +16,9 @@ const RegistrationForm = () => {
   const router = useRouter();
   const [previewImage, setPreviewImage] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [fileStore, setFileStore] = useState(null);
 
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     const {
       name,
       username,
@@ -107,7 +109,37 @@ const RegistrationForm = () => {
       });
       return;
     }
-    router.push("/success");
+    // console.log(previewImage);
+    //
+    const formData = new FormData();
+    formData.append("name", data.name);
+    formData.append("username", data.username);
+    formData.append("email", data.email);
+    formData.append("password", data.password);
+    formData.append("nationalId", data.nationalId);
+    data.photo = previewImage;
+    formData.append("photo", "..."); // Assuming it's a FileList
+    data.imageName = fileStore;
+    formData.append("imageName", data.imageName); // Assuming it's a FileList
+
+    // Append role and permissions as needed
+    formData.append("role", data.role);
+    data.permissions.forEach((permission) => {
+      formData.append("permissions", permission);
+    });
+
+    try {
+      const response = await axios.post(
+        "http://localhost:3333/admin/create-admin",
+        formData
+      );
+      console.log("API Response:", response);
+      router.push("/success");
+    } catch (error) {
+      console.error("API Error:", error.response || error);
+    }
+
+    // router.push("/success");
   };
 
   const generateRandomPassword = () => {
@@ -125,6 +157,7 @@ const RegistrationForm = () => {
     const file = e.target.files[0];
 
     if (file) {
+      setFileStore(file);
       const reader = new FileReader();
 
       reader.onloadend = () => {
